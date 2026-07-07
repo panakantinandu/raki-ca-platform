@@ -61,7 +61,9 @@ spring:
       max-request-size: 20MB
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Railway (and most PaaS platforms) inject PORT and expect the app to bind to it -
+  # SERVER_PORT is kept as a fallback for local/docker-compose use where PORT isn't set.
+  port: ${PORT:${SERVER_PORT:8080}}
   # Behind a reverse proxy (Nginx/ALB) forwarded headers are trusted so
   # correct client IPs are used for rate limiting and audit logs.
   forward-headers-strategy: framework

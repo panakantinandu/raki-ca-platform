@@ -1,0 +1,11 @@
+# See backend/railway.toml for the monorepo setup note - set this service's Railway
+# "Root Directory" to frontend/.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

@@ -1,8 +1,19 @@
+// A relative path only reaches the backend locally, where Vite's dev proxy forwards
+// /oauth2/* to it. Once frontend and backend are separate deployed services (e.g. two
+// Railway services on different subdomains), a relative redirect would just hit the
+// frontend's own static host instead. Derive the backend's origin from the same env var
+// axiosClient uses, stripping the trailing /api - falls back to the relative path so
+// local dev (where VITE_API_BASE_URL is intentionally unset) keeps working unchanged.
+function backendOrigin() {
+  const apiBase = import.meta.env.VITE_API_BASE_URL
+  return apiBase ? apiBase.replace(/\/api\/?$/, '') : ''
+}
+
 export default function GoogleButton({ label }) {
   function handleClick() {
     // Backend handles the full OAuth2 dance and redirects back to
     // /oauth/callback with tokens; see OAuth2LoginSuccessHandler.
-    window.location.href = '/oauth2/authorization/google'
+    window.location.href = `${backendOrigin()}/oauth2/authorization/google`
   }
 
   return (

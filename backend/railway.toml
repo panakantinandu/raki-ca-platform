@@ -1,0 +1,13 @@
+# Marks this directory as its own Railway service's root. For a monorepo, create two
+# Railway services pointing at this same repo, set this service's "Root Directory" to
+# backend/, and the other's to frontend/ - Railway then picks up each directory's own
+# railway.toml independently.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
