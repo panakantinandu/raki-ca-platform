@@ -157,7 +157,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         }
     }
 
-    private void seedDocuments(User owner, List<Client> clients) throws RuntimeException {
+    private void seedDocuments(User owner, List<Client> clients) {
         try {
             Path dir = Path.of(localStorageDir);
             Files.createDirectories(dir);
@@ -165,7 +165,10 @@ public class DemoDataSeeder implements ApplicationRunner {
             seedOneDocument(dir, owner, clients.get(0), "GSTR3B_May2026_ShreeBalaji.pdf");
             seedOneDocument(dir, owner, clients.get(3), "PAN_Card_NexgenFabrics.pdf");
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write demo document files", e);
+            // Sample documents are purely cosmetic for the demo - never let a storage
+            // hiccup (e.g. a restrictive filesystem on the deploy target) roll back the
+            // rest of the seeded data, or worse, take down application startup entirely.
+            log.warn("Could not write demo sample documents - continuing without them ({}).", e.getMessage());
         }
     }
 
