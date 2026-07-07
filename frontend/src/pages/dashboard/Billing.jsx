@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check, CircleAlert } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import Badge from '../../components/ui/Badge.jsx'
 
@@ -7,17 +7,26 @@ export default function Billing() {
   const [subscription, setSubscription] = useState(null)
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
+  const [plansLoadError, setPlansLoadError] = useState(false)
   const [changing, setChanging] = useState(false)
 
   function load() {
     setLoading(true)
+    setPlansLoadError(false)
     Promise.all([
       apiClient.get('/subscription/me'),
       apiClient.get('/plans')
     ]).then(([subRes, plansRes]) => {
       setSubscription(subRes.data)
-      setPlans(plansRes.data)
-    }).finally(() => setLoading(false))
+      // Expected to be a plain array - guard against an error body or any other
+      // unexpected shape rather than crashing on .map() below.
+      if (Array.isArray(plansRes.data)) {
+        setPlans(plansRes.data)
+      } else {
+        setPlansLoadError(true)
+      }
+    }).catch(() => setPlansLoadError(true))
+      .finally(() => setLoading(false))
   }
 
   useEffect(load, [])
@@ -62,6 +71,12 @@ export default function Billing() {
             <Badge status={subscription?.status} />
           </div>
 
+          {plansLoadError ? (
+            <div className="card flex flex-col items-center px-6 py-12 text-center">
+              <CircleAlert size={24} className="text-parchment-faint" />
+              <p className="mt-3 font-sans text-sm text-parchment-muted">Pricing temporarily unavailable. Please check back shortly.</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = subscription?.planCode === plan.code
@@ -88,7 +103,7 @@ export default function Billing() {
                     </p>
                   )}
                   <ul className="mt-5 space-y-2">
-                    {plan.features.map((f) => (
+                    {(Array.isArray(plan.features) ? plan.features : []).map((f) => (
                       <li key={f} className="flex items-start gap-2 font-sans text-xs text-parchment-muted">
                         <Check size={13} className="mt-0.5 flex-shrink-0 text-ledger-teal" />
                         {f}
@@ -106,6 +121,7 @@ export default function Billing() {
               )
             })}
           </div>
+          )}
         </>
       )}
     </div>

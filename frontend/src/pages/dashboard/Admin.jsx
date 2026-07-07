@@ -44,6 +44,12 @@ export default function Admin() {
     )
   }
 
+  // Guard against an unexpected response shape rather than crashing on Object.entries()/.map().
+  const recentSignups = Array.isArray(stats.recentSignups) ? stats.recentSignups : []
+  const activeSubscriptionsByPlan = stats.activeSubscriptionsByPlan && typeof stats.activeSubscriptionsByPlan === 'object'
+    ? stats.activeSubscriptionsByPlan
+    : {}
+
   return (
     <div>
       <div className="mb-8">
@@ -56,18 +62,18 @@ export default function Admin() {
         <StatCard label="Active trials" value={stats.activeTrials} accent="teal" />
         <StatCard
           label="Active subscriptions"
-          value={Object.values(stats.activeSubscriptionsByPlan).reduce((a, b) => a + b, 0)}
+          value={Object.values(activeSubscriptionsByPlan).reduce((a, b) => a + b, 0)}
           accent="brass"
         />
       </div>
 
       <div className="mt-8 card p-6">
         <h2 className="mb-5 font-display text-lg font-medium text-parchment">Active subscriptions by plan</h2>
-        {Object.keys(stats.activeSubscriptionsByPlan).length === 0 ? (
+        {Object.keys(activeSubscriptionsByPlan).length === 0 ? (
           <p className="font-sans text-sm text-parchment-muted">No active (paid) subscriptions yet.</p>
         ) : (
           <ul className="space-y-2">
-            {Object.entries(stats.activeSubscriptionsByPlan).map(([plan, count]) => (
+            {Object.entries(activeSubscriptionsByPlan).map(([plan, count]) => (
               <li key={plan} className="flex items-center justify-between font-sans text-sm">
                 <span className="text-parchment-muted">{plan}</span>
                 <span className="font-mono text-parchment">{count}</span>
@@ -79,7 +85,7 @@ export default function Admin() {
 
       <div className="mt-8 card p-6">
         <h2 className="mb-5 font-display text-lg font-medium text-parchment">Recent signups</h2>
-        {stats.recentSignups.length === 0 ? (
+        {recentSignups.length === 0 ? (
           <p className="font-sans text-sm text-parchment-muted">No signups yet.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -92,7 +98,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-border">
-                {stats.recentSignups.map((s) => (
+                {recentSignups.map((s) => (
                   <tr key={s.email}>
                     <td className="py-3 text-parchment">{s.fullName}</td>
                     <td className="py-3 text-parchment-muted">{s.email}</td>

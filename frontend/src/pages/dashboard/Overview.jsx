@@ -65,7 +65,7 @@ export default function Overview() {
               <span className="font-mono text-xs text-parchment-faint">Next 14 days</span>
             </div>
 
-            {stats.upcomingDeadlines.length === 0 ? (
+            {(Array.isArray(stats.upcomingDeadlines) ? stats.upcomingDeadlines : []).length === 0 ? (
               <div className="flex flex-col items-center py-10 text-center">
                 <CheckCircle2 size={28} className="text-ledger-teal" />
                 <p className="mt-3 font-sans text-sm text-parchment-muted">Nothing due in the next two weeks.</p>

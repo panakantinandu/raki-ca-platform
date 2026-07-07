@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check, CircleAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import apiClient from '../../api/axiosClient.js'
 
@@ -9,11 +9,23 @@ const HIGHLIGHTED_CODE = 'GROWTH'
 export default function Pricing() {
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     let mounted = true
     apiClient.get('/plans')
-      .then(({ data }) => { if (mounted) setPlans(data) })
+      .then(({ data }) => {
+        if (!mounted) return
+        // The API is expected to return a plain array. If something upstream ever
+        // returns an error body or a differently-shaped response instead, fall back
+        // to an explicit error state rather than crashing the whole page on .map().
+        if (Array.isArray(data)) {
+          setPlans(data)
+        } else {
+          setLoadError(true)
+        }
+      })
+      .catch(() => { if (mounted) setLoadError(true) })
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [])
@@ -36,6 +48,11 @@ export default function Pricing() {
             {[...Array(3)].map((_, i) => (
               <div key={i} className="card h-96 animate-pulse bg-ink-raised/50" />
             ))}
+          </div>
+        ) : loadError ? (
+          <div className="mt-16 flex flex-col items-center rounded-xl border border-ink-border bg-ink-surface px-6 py-16 text-center">
+            <CircleAlert size={28} className="text-parchment-faint" />
+            <p className="mt-4 font-sans text-sm text-parchment-muted">Pricing temporarily unavailable. Please check back shortly.</p>
           </div>
         ) : (
           <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -81,7 +98,7 @@ export default function Pricing() {
                   )}
 
                   <ul className="mt-8 flex-1 space-y-3">
-                    {plan.features.map((f) => (
+                    {(Array.isArray(plan.features) ? plan.features : []).map((f) => (
                       <li key={f} className="flex items-start gap-2.5 font-sans text-sm text-parchment-muted">
                         <Check size={16} className="mt-0.5 flex-shrink-0 text-ledger-teal" />
                         {f}

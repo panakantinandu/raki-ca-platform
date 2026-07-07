@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, CalendarClock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, CalendarClock, CircleAlert } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import Modal from '../ui/Modal.jsx'
 import EmptyState from '../ui/EmptyState.jsx'
@@ -37,13 +37,25 @@ export default function FilingsCalendar() {
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() + 1 })
   const [filings, setFilings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [selectedDay, setSelectedDay] = useState(null)
 
   useEffect(() => {
     let mounted = true
     setLoading(true)
+    setLoadError(false)
     apiClient.get('/filings/calendar', { params: { month: cursor.month, year: cursor.year } })
-      .then(({ data }) => { if (mounted) setFilings(data) })
+      .then(({ data }) => {
+        if (!mounted) return
+        // Expected to be a plain array - guard against an error body or any other
+        // unexpected shape rather than crashing when we iterate it below.
+        if (Array.isArray(data)) {
+          setFilings(data)
+        } else {
+          setLoadError(true)
+        }
+      })
+      .catch(() => { if (mounted) setLoadError(true) })
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [cursor.month, cursor.year])
@@ -61,7 +73,7 @@ export default function FilingsCalendar() {
   async function markFiled(filingId) {
     await apiClient.patch(`/filings/${filingId}/mark-filed`)
     const { data } = await apiClient.get('/filings/calendar', { params: { month: cursor.month, year: cursor.year } })
-    setFilings(data)
+    if (Array.isArray(data)) setFilings(data)
   }
 
   function goToMonth(offset) {
@@ -102,6 +114,11 @@ export default function FilingsCalendar() {
 
       {loading ? (
         <div className="h-96 animate-pulse rounded-lg bg-ink-raised/50" />
+      ) : loadError ? (
+        <div className="flex flex-col items-center rounded-lg border border-ink-border px-6 py-16 text-center">
+          <CircleAlert size={24} className="text-parchment-faint" />
+          <p className="mt-3 font-sans text-sm text-parchment-muted">Calendar temporarily unavailable. Please check back shortly.</p>
+        </div>
       ) : (
         <>
           {/* Month grid - desktop/tablet */}
