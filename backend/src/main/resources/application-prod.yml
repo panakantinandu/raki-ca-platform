@@ -1,0 +1,17 @@
+spring:
+  jpa:
+    show-sql: false
+
+server:
+  tomcat:
+    max-threads: 200
+    accept-count: 100
+
+logging:
+  level:
+    root: WARN
+    com.caagent: INFO
+
+# In production: JWT_SECRET, DB credentials, REDIS_HOST, GOOGLE_CLIENT_ID/SECRET,
+# RAZORPAY keys and CORS_ALLOWED_ORIGINS must all be supplied as real environment
+# variables / secrets manager entries. Never commit real secrets to source control.

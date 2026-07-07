@@ -1,0 +1,47 @@
+package com.caagent.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "refresh_tokens")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class RefreshToken {
+
+    @Id
+    @GeneratedValue
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // We never store the raw refresh token, only a SHA-256 hash of it -
+    // so a database leak alone can't be used to forge sessions.
+    @Column(name = "token_hash", nullable = false)
+    private String tokenHash;
+
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean revoked = false;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @Builder.Default
+    private Instant createdAt = Instant.now();
+
+    @Column(name = "user_agent")
+    private String userAgent;
+
+    @Column(name = "ip_address")
+    private String ipAddress;
+}

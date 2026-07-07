@@ -1,0 +1,132 @@
+spring:
+  application:
+    name: ca-agent-platform
+
+  # ---- Database (PostgreSQL, connection-pooled via HikariCP) ----
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/caagent}
+    username: ${DB_USERNAME:caagent_user}
+    password: ${DB_PASSWORD:changeme}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      pool-name: CaAgentHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema is owned by Flyway, never by Hibernate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ---- Redis: shared state for rate limiting + token blacklist ----
+  # Using Redis (not local memory) is what makes rate limiting and token
+  # revocation work correctly across multiple horizontally-scaled instances.
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+
+  # ---- Google OAuth2 login ----
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 20MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  # Behind a reverse proxy (Nginx/ALB) forwarded headers are trusted so
+  # correct client IPs are used for rate limiting and audit logs.
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+  error:
+    include-message: never
+    include-stacktrace: never
+
+# ---- Application-specific config ----
+app:
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_IN_PRODUCTION_MIN_256_BITS}
+    access-token-expiry-ms: ${JWT_ACCESS_EXPIRY:900000}      # 15 minutes
+    refresh-token-expiry-ms: ${JWT_REFRESH_EXPIRY:604800000} # 7 days
+    issuer: ca-agent-platform
+
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+  rate-limit:
+    auth-endpoints:
+      capacity: 10
+      refill-tokens: 10
+      refill-duration-seconds: 60
+    general-endpoints:
+      capacity: 100
+      refill-tokens: 100
+      refill-duration-seconds: 60
+
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
+  storage:
+    local-dir: ${LOCAL_STORAGE_DIR:/tmp/caagent-uploads}
+
+  admin:
+    # Single hard-coded admin identity for the founder-only /app/admin visibility page -
+    # not a role system. Leave unset to disable the admin endpoints entirely.
+    user-id: ${ADMIN_USER_ID:}
+
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+    key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:placeholder_webhook_secret}
+
+springdoc:
+  swagger-ui:
+    path: /api-docs
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: INFO
+    com.caagent: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
