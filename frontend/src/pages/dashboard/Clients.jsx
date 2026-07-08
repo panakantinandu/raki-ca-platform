@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Users, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Users, Pencil, Trash2, FileStack } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import ClientFormModal from '../../components/ui/ClientFormModal.jsx'
 import ConfirmDialog from '../../components/ui/ConfirmDialog.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
 import Badge from '../../components/ui/Badge.jsx'
+import BulkCreateFilingModal from '../../components/ui/BulkCreateFilingModal.jsx'
 
 export default function Clients() {
   const navigate = useNavigate()
@@ -14,6 +15,8 @@ export default function Clients() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
   const [deletingClient, setDeletingClient] = useState(null)
+  const [selectedIds, setSelectedIds] = useState([])
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
 
   function loadClients() {
     setLoading(true)
@@ -40,6 +43,14 @@ export default function Clients() {
     loadClients()
   }
 
+  function toggleSelected(id) {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => prev.length === clients.length ? [] : clients.map((c) => c.id))
+  }
+
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
@@ -47,9 +58,16 @@ export default function Clients() {
           <span className="label-eyebrow">Clients</span>
           <h1 className="mt-2 font-display text-3xl font-medium text-parchment">Your client book</h1>
         </div>
-        <button onClick={openCreate} className="btn-brass !py-2.5">
-          <Plus size={16} /> Add client
-        </button>
+        <div className="flex items-center gap-3">
+          {selectedIds.length > 0 && (
+            <button onClick={() => setBulkModalOpen(true)} className="btn-ghost !px-4 !py-2.5 text-sm">
+              <FileStack size={16} /> Bulk create filing ({selectedIds.length})
+            </button>
+          )}
+          <button onClick={openCreate} className="btn-brass !py-2.5">
+            <Plus size={16} /> Add client
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -67,6 +85,15 @@ export default function Clients() {
             <table className="w-full min-w-[640px] text-left">
               <thead className="border-b border-ink-border">
                 <tr>
+                  <th className="w-10 px-6 py-3">
+                    <input
+                      type="checkbox"
+                      checked={clients.length > 0 && selectedIds.length === clients.length}
+                      onChange={toggleSelectAll}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label="Select all clients"
+                    />
+                  </th>
                   <th className="px-6 py-3 font-mono text-xs uppercase tracking-wider text-parchment-faint">Name</th>
                   <th className="px-6 py-3 font-mono text-xs uppercase tracking-wider text-parchment-faint">Type</th>
                   <th className="px-6 py-3 font-mono text-xs uppercase tracking-wider text-parchment-faint">GSTIN</th>
@@ -81,6 +108,14 @@ export default function Clients() {
                     onClick={() => navigate(`/app/clients/${c.id}`)}
                     className="cursor-pointer transition-colors hover:bg-ink-raised/40"
                   >
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(c.id)}
+                        onChange={() => toggleSelected(c.id)}
+                        aria-label={`Select ${c.name}`}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <p className="font-sans text-sm font-medium text-parchment">{c.name}</p>
                       <p className="font-mono text-xs text-parchment-faint">{c.email}</p>
@@ -129,6 +164,13 @@ export default function Clients() {
         danger
         onConfirm={confirmDelete}
         onCancel={() => setDeletingClient(null)}
+      />
+
+      <BulkCreateFilingModal
+        open={bulkModalOpen}
+        clientIds={selectedIds}
+        onClose={() => setBulkModalOpen(false)}
+        onDone={() => { setSelectedIds([]); loadClients() }}
       />
     </div>
   )

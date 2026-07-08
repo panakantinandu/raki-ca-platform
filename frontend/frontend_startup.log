@@ -3,8 +3,41 @@
 > vite
 
 
-  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m44491[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m35473[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
 [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
-[2m12:34:46 pm[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/GoogleButton.jsx, /src/styles/index.css[22m
+[2m2:00:25 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:00:34 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:00:39 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:00:50 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:00:55 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:05:50 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Clients.jsx, /src/styles/index.css[22m
+[2m2:05:56 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Clients.jsx, /src/styles/index.css[22m
+[2m2:06:04 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Clients.jsx, /src/styles/index.css[22m
+[2m2:06:15 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Clients.jsx, /src/styles/index.css[22m
+[2m2:06:24 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Clients.jsx, /src/styles/index.css[22m
+[2m2:06:35 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Filings.jsx, /src/styles/index.css[22m
+[2m2:06:41 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Filings.jsx, /src/styles/index.css[22m
+[2m2:06:48 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Filings.jsx, /src/styles/index.css[22m
+[2m2:06:58 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Filings.jsx, /src/styles/index.css[22m
+[2m2:07:09 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Filings.jsx, /src/styles/index.css[22m
+[2m2:12:19 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/StatCard.jsx, /src/styles/index.css[22m
+[2m2:12:28 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Overview.jsx, /src/styles/index.css[22m
+[2m2:18:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:18:18 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:18:25 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:18:36 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:18:57 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/styles/index.css[22m
+[2m2:19:02 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/styles/index.css[22m
+[2m2:32:50 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Documents.jsx, /src/styles/index.css[22m
+[2m2:32:56 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Documents.jsx, /src/styles/index.css[22m
+[2m2:33:03 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Documents.jsx, /src/styles/index.css[22m
+[2m2:33:10 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Documents.jsx, /src/styles/index.css[22m
+[2m2:33:20 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Documents.jsx, /src/styles/index.css[22m
+[2m2:33:36 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/Documents.jsx, /src/styles/index.css[22m
+[2m2:33:53 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:33:59 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:34:07 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:34:20 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m
+[2m2:34:27 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/dashboard/ClientDetail.jsx, /src/styles/index.css[22m

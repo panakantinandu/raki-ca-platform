@@ -39,6 +39,9 @@ public class Plan {
     @Column(name = "max_seats", nullable = false)
     private int maxSeats;
 
+    @Column(name = "max_extractions_monthly")
+    private Integer maxExtractionsMonthly; // null = unlimited
+
     // Founding-member launch pricing: a limited-slot discounted price, kept alongside the
     // regular price above. Null/0-remaining means founding pricing isn't (or is no longer)
     // available for this plan, and the regular price applies.

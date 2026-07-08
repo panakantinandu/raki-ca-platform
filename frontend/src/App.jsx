@@ -5,6 +5,7 @@ import Signup from './pages/Signup.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import OAuthCallback from './pages/OAuthCallback.jsx'
+import PublicStatus from './pages/PublicStatus.jsx'
 import DashboardLayout from './pages/dashboard/DashboardLayout.jsx'
 import Overview from './pages/dashboard/Overview.jsx'
 import Clients from './pages/dashboard/Clients.jsx'
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
+      <Route path="/status/:token" element={<PublicStatus />} />
 
       <Route
         path="/app"

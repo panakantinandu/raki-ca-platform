@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, FileCheck2, Check, Table2, CalendarDays } from 'lucide-react'
+import { Plus, FileCheck2, Check, Table2, CalendarDays, CheckCheck } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import Modal from '../../components/ui/Modal.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
@@ -25,6 +25,8 @@ export default function Filings() {
   const [form, setForm] = useState({ clientId: '', filingType: 'GSTR1', periodLabel: '', dueDate: '', notes: '' })
   const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [selectedIds, setSelectedIds] = useState([])
+  const [bulkMarking, setBulkMarking] = useState(false)
 
   function loadFilings() {
     setLoading(true)
@@ -64,6 +66,27 @@ export default function Filings() {
     loadFilings()
   }
 
+  function toggleSelected(id) {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  }
+
+  const unfiledIds = filings.filter((f) => f.status !== 'FILED').map((f) => f.id)
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => prev.length === unfiledIds.length ? [] : unfiledIds)
+  }
+
+  async function bulkMarkFiled() {
+    setBulkMarking(true)
+    try {
+      await apiClient.patch('/filings/bulk-mark-filed', { filingIds: selectedIds })
+      setSelectedIds([])
+      loadFilings()
+    } finally {
+      setBulkMarking(false)
+    }
+  }
+
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -90,6 +113,11 @@ export default function Filings() {
               <Table2 size={14} /> Table
             </button>
           </div>
+          {view === 'table' && selectedIds.length > 0 && (
+            <button onClick={bulkMarkFiled} disabled={bulkMarking} className="btn-ghost !px-4 !py-2.5 text-sm disabled:opacity-60">
+              <CheckCheck size={16} /> {bulkMarking ? 'Marking…' : `Bulk mark as filed (${selectedIds.length})`}
+            </button>
+          )}
           <button onClick={openCreate} disabled={clients.length === 0} className="btn-brass !py-2.5 disabled:opacity-50">
             <Plus size={16} /> New filing
           </button>
@@ -118,6 +146,14 @@ export default function Filings() {
             <table className="w-full min-w-[720px] text-left">
               <thead className="border-b border-ink-border">
                 <tr>
+                  <th className="w-10 px-6 py-3">
+                    <input
+                      type="checkbox"
+                      checked={unfiledIds.length > 0 && selectedIds.length === unfiledIds.length}
+                      onChange={toggleSelectAll}
+                      aria-label="Select all unfiled filings"
+                    />
+                  </th>
                   <th className="px-6 py-3 font-mono text-xs uppercase tracking-wider text-parchment-faint">Client</th>
                   <th className="px-6 py-3 font-mono text-xs uppercase tracking-wider text-parchment-faint">Type</th>
                   <th className="px-6 py-3 font-mono text-xs uppercase tracking-wider text-parchment-faint">Period</th>
@@ -129,6 +165,16 @@ export default function Filings() {
               <tbody className="divide-y divide-ink-border">
                 {filings.map((f) => (
                   <tr key={f.id} className="transition-colors hover:bg-ink-raised/40">
+                    <td className="px-6 py-4">
+                      {f.status !== 'FILED' && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(f.id)}
+                          onChange={() => toggleSelected(f.id)}
+                          aria-label={`Select ${f.client?.name} ${f.filingType}`}
+                        />
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-sans text-sm font-medium text-parchment">{f.client?.name}</td>
                     <td className="px-6 py-4 font-mono text-sm text-parchment-muted">{f.filingType}</td>
                     <td className="px-6 py-4 font-sans text-sm text-parchment-muted">{f.periodLabel}</td>

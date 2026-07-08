@@ -1,5 +1,6 @@
 package com.caagent.service;
 
+import com.caagent.dto.BulkFilingCreateRequest;
 import com.caagent.dto.FilingRequest;
 import com.caagent.exception.ApiException;
 import com.caagent.model.Client;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +31,10 @@ public class FilingService {
 
     public record CalendarEntry(UUID filingId, String clientName, String filingType, String periodLabel,
                                  LocalDate dueDate, String status) {}
+
+    public record BulkCreateResult(UUID clientId, boolean success, String message, Filing filing) {}
+
+    public record BulkMarkFiledResult(UUID filingId, boolean success, String message) {}
 
     public Page<Filing> listFilings(UUID ownerId, UUID clientId, Pageable pageable) {
         if (clientId != null) {
@@ -75,6 +81,64 @@ public class FilingService {
         filing.setStatus(Filing.Status.FILED);
         filing.setFiledAt(Instant.now());
         return filingRepository.save(filing);
+    }
+
+    /**
+     * Creates one Filing per client ID. Each client is resolved and saved independently so a
+     * client ID that doesn't belong to this owner (wrong account, typo, deleted) is reported as
+     * a per-item failure rather than aborting the whole batch - no ApiException escapes this
+     * method, so the other clients' filings still commit when the transaction completes.
+     */
+    @Transactional
+    public List<BulkCreateResult> bulkCreateFilings(UUID ownerId, BulkFilingCreateRequest req) {
+        User owner = userRepository.getReferenceById(ownerId);
+        Filing.FilingType filingType;
+        try {
+            filingType = Filing.FilingType.valueOf(req.filingType());
+        } catch (IllegalArgumentException e) {
+            throw ApiException.badRequest("Unknown filing type: " + req.filingType());
+        }
+        String periodLabel = InputSanitizer.sanitizePlainText(req.periodLabel());
+        String notes = InputSanitizer.sanitizePlainText(req.notes());
+
+        List<BulkCreateResult> results = new ArrayList<>();
+        for (UUID clientId : req.clientIds()) {
+            try {
+                Client client = clientService.getClient(ownerId, clientId);
+                Filing filing = Filing.builder()
+                        .id(UUID.randomUUID())
+                        .owner(owner)
+                        .client(client)
+                        .filingType(filingType)
+                        .periodLabel(periodLabel)
+                        .dueDate(req.dueDate())
+                        .notes(notes)
+                        .build();
+                filingRepository.save(filing);
+                results.add(new BulkCreateResult(clientId, true, null, filing));
+            } catch (ApiException e) {
+                results.add(new BulkCreateResult(clientId, false, e.getMessage(), null));
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Marks each filing as filed independently, same not-owned-here-is-a-per-item-failure
+     * approach as bulkCreateFilings.
+     */
+    @Transactional
+    public List<BulkMarkFiledResult> bulkMarkFiled(UUID ownerId, List<UUID> filingIds) {
+        List<BulkMarkFiledResult> results = new ArrayList<>();
+        for (UUID filingId : filingIds) {
+            try {
+                markFiled(ownerId, filingId);
+                results.add(new BulkMarkFiledResult(filingId, true, null));
+            } catch (ApiException e) {
+                results.add(new BulkMarkFiledResult(filingId, false, e.getMessage()));
+            }
+        }
+        return results;
     }
 
     @Transactional

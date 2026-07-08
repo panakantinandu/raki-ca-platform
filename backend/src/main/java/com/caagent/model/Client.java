@@ -51,6 +51,15 @@ public class Client {
     @Column(columnDefinition = "text")
     private String notes;
 
+    // Long random unguessable string (never the client's UUID) used for the public
+    // read-only status link at /status/:token. Null until first enabled.
+    @Column(name = "share_token", unique = true, length = 64)
+    private String shareToken;
+
+    @Column(name = "share_enabled", nullable = false)
+    @Builder.Default
+    private boolean shareEnabled = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

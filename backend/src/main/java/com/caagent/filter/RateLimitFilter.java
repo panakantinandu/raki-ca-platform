@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 /**
  * Rate limiting backed by Redis rather than local memory. This is the detail
@@ -24,12 +25,16 @@ import java.util.function.Supplier;
  * simply by hitting a load balancer with 10 instances behind it. With Redis,
  * every instance shares the same bucket state.
  *
- * Two tiers:
+ * Three tiers:
  *  - Auth endpoints (/api/auth/**): tight limit, deters credential stuffing / brute force.
+ *  - Document extraction (POST /api/documents/{id}/extract): its own, tighter limit - each
+ *    call costs real money against the Anthropic API, independent of the general API traffic.
  *  - Everything else: looser general-purpose limit per IP.
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
+
+    private static final Pattern EXTRACT_PATH = Pattern.compile("^/api/documents/[^/]+/extract$");
 
     private final ProxyManager<String> proxyManager;
 
@@ -41,6 +46,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final int generalRefillTokens;
     private final long generalRefillSeconds;
 
+    private final int extractionCapacity;
+    private final int extractionRefillTokens;
+    private final long extractionRefillSeconds;
+
     public RateLimitFilter(
             ProxyManager<String> proxyManager,
             @Value("${app.rate-limit.auth-endpoints.capacity}") int authCapacity,
@@ -48,7 +57,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             @Value("${app.rate-limit.auth-endpoints.refill-duration-seconds}") long authRefillSeconds,
             @Value("${app.rate-limit.general-endpoints.capacity}") int generalCapacity,
             @Value("${app.rate-limit.general-endpoints.refill-tokens}") int generalRefillTokens,
-            @Value("${app.rate-limit.general-endpoints.refill-duration-seconds}") long generalRefillSeconds
+            @Value("${app.rate-limit.general-endpoints.refill-duration-seconds}") long generalRefillSeconds,
+            @Value("${app.rate-limit-extraction.capacity}") int extractionCapacity,
+            @Value("${app.rate-limit-extraction.refill-tokens}") int extractionRefillTokens,
+            @Value("${app.rate-limit-extraction.refill-duration-seconds}") long extractionRefillSeconds
     ) {
         this.proxyManager = proxyManager;
         this.authCapacity = authCapacity;
@@ -57,6 +69,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.generalCapacity = generalCapacity;
         this.generalRefillTokens = generalRefillTokens;
         this.generalRefillSeconds = generalRefillSeconds;
+        this.extractionCapacity = extractionCapacity;
+        this.extractionRefillTokens = extractionRefillTokens;
+        this.extractionRefillSeconds = extractionRefillSeconds;
     }
 
     @Override
@@ -69,13 +84,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String clientIp = resolveClientIp(request);
         boolean isAuthEndpoint = path.startsWith("/api/auth/");
+        boolean isExtractionEndpoint = "POST".equalsIgnoreCase(request.getMethod()) && EXTRACT_PATH.matcher(path).matches();
 
-        String bucketKey = (isAuthEndpoint ? "rl:auth:" : "rl:general:") + clientIp;
+        String bucketKeyPrefix = isAuthEndpoint ? "rl:auth:" : isExtractionEndpoint ? "rl:extract:" : "rl:general:";
+        String bucketKey = bucketKeyPrefix + clientIp;
 
         Supplier<BucketConfiguration> configSupplier = isAuthEndpoint
                 ? () -> BucketConfiguration.builder()
                     .addLimit(Bandwidth.classic(authCapacity,
                             io.github.bucket4j.Refill.intervally(authRefillTokens, Duration.ofSeconds(authRefillSeconds))))
+                    .build()
+                : isExtractionEndpoint
+                ? () -> BucketConfiguration.builder()
+                    .addLimit(Bandwidth.classic(extractionCapacity,
+                            io.github.bucket4j.Refill.intervally(extractionRefillTokens, Duration.ofSeconds(extractionRefillSeconds))))
                     .build()
                 : () -> BucketConfiguration.builder()
                     .addLimit(Bandwidth.classic(generalCapacity,

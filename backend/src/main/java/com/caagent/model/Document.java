@@ -1,9 +1,12 @@
 package com.caagent.model;
 
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -48,4 +51,19 @@ public class Document {
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant uploadedAt = Instant.now();
+
+    // AI-extracted fields (gstin, documentNumber, amount, date, vendorName) - always
+    // CA-reviewed and confirmed before being relied on anywhere else in the app.
+    @Type(JsonType.class)
+    @Column(name = "extracted_data", columnDefinition = "jsonb")
+    private Map<String, Object> extractedData;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "extraction_status", length = 20)
+    private ExtractionStatus extractionStatus;
+
+    @Column(name = "extracted_at")
+    private Instant extractedAt;
+
+    public enum ExtractionStatus { PENDING, COMPLETED, FAILED }
 }

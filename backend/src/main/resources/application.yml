@@ -100,6 +100,12 @@ app:
   storage:
     local-dir: ${LOCAL_STORAGE_DIR:/tmp/caagent-uploads}
 
+  fees-avoided:
+    # Flat illustrative per-filing late-fee estimate (INR) shown on the Overview dashboard.
+    # NOT a real GST/ITR/TDS calculation - actual late fees vary by filing type, turnover,
+    # and days delayed. See DashboardService.computeFeesAvoidedEstimate for the full caveat.
+    per-filing-estimate-inr: ${FEES_AVOIDED_ESTIMATE_INR:200}
+
   admin:
     # Single hard-coded admin identity for the founder-only /app/admin visibility page -
     # not a role system. Leave unset to disable the admin endpoints entirely.
@@ -109,6 +115,17 @@ app:
     key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
     key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
     webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:placeholder_webhook_secret}
+
+  anthropic:
+    # No default - AnthropicClient fails startup with a clear message if this is blank,
+    # same fail-fast pattern as app.jwt.secret in JwtUtil. Never hardcode a real key here.
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-sonnet-5}
+
+  rate-limit-extraction:
+    capacity: ${EXTRACTION_RATE_LIMIT_CAPACITY:5}
+    refill-tokens: ${EXTRACTION_RATE_LIMIT_REFILL_TOKENS:5}
+    refill-duration-seconds: ${EXTRACTION_RATE_LIMIT_REFILL_SECONDS:60}
 
 springdoc:
   swagger-ui:

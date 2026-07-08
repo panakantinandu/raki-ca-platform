@@ -1,5 +1,7 @@
 package com.caagent.controller;
 
+import com.caagent.dto.BulkFilingCreateRequest;
+import com.caagent.dto.BulkMarkFiledRequest;
 import com.caagent.dto.FilingRequest;
 import com.caagent.model.Filing;
 import com.caagent.security.UserPrincipal;
@@ -48,5 +50,17 @@ public class FilingController {
     @PatchMapping("/{id}/mark-filed")
     public Filing markFiled(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
         return filingService.markFiled(principal.getUserId(), id);
+    }
+
+    @PostMapping("/bulk-create")
+    public List<FilingService.BulkCreateResult> bulkCreate(@AuthenticationPrincipal UserPrincipal principal,
+                                                             @Valid @RequestBody BulkFilingCreateRequest req) {
+        return filingService.bulkCreateFilings(principal.getUserId(), req);
+    }
+
+    @PatchMapping("/bulk-mark-filed")
+    public List<FilingService.BulkMarkFiledResult> bulkMarkFiled(@AuthenticationPrincipal UserPrincipal principal,
+                                                                   @Valid @RequestBody BulkMarkFiledRequest req) {
+        return filingService.bulkMarkFiled(principal.getUserId(), req.filingIds());
     }
 }

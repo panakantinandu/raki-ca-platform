@@ -1,6 +1,7 @@
 package com.caagent.controller;
 
 import com.caagent.dto.ClientRequest;
+import com.caagent.dto.ShareLinkResponse;
 import com.caagent.model.Client;
 import com.caagent.security.UserPrincipal;
 import com.caagent.service.ClientService;
@@ -45,5 +46,11 @@ public class ClientController {
     public ResponseEntity<Void> delete(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
         clientService.deleteClient(principal.getUserId(), id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/share-link")
+    public ShareLinkResponse setShareLink(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id,
+                                           @RequestParam boolean enabled) {
+        return clientService.setShareEnabled(principal.getUserId(), id, enabled);
     }
 }

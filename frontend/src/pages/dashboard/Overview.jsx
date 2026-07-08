@@ -59,6 +59,19 @@ export default function Overview() {
             <StatCard label="Filed" value={stats.filedThisMonth} accent="teal" />
           </div>
 
+          {stats.feesAvoidedEstimate && (
+            <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                label="Fees avoided this month"
+                value={`₹${stats.feesAvoidedEstimate.estimatedInr.toLocaleString('en-IN')}`}
+                accent="teal"
+                estimated
+                estimatedTitle="Illustrative only: on-time filings this month × a flat per-filing estimate. Not based on actual GST/ITR/TDS late-fee rules, which vary by filing type, turnover, and days delayed."
+                hint={`${stats.feesAvoidedEstimate.onTimeFilingCount} filing${stats.feesAvoidedEstimate.onTimeFilingCount === 1 ? '' : 's'} filed on time × ₹${stats.feesAvoidedEstimate.perFilingEstimateInr} est.`}
+              />
+            </div>
+          )}
+
           <div className="mt-8 card p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-lg font-medium text-parchment">Upcoming deadlines</h2>

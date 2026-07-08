@@ -14,4 +14,10 @@ public interface ClientRepository extends JpaRepository<Client, UUID> {
     Page<Client> findByOwnerId(UUID ownerId, Pageable pageable);
     Optional<Client> findByIdAndOwnerId(UUID id, UUID ownerId);
     long countByOwnerId(UUID ownerId);
+
+    // shareEnabled is part of the query itself (not checked after loading) so a disabled
+    // token and a token that never existed take the exact same code path to "not found".
+    Optional<Client> findByShareTokenAndShareEnabledTrue(String shareToken);
+
+    boolean existsByShareToken(String shareToken);
 }

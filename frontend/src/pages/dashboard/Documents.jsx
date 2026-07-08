@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Upload, FolderOpen, FileText } from 'lucide-react'
+import { Upload, FolderOpen, FileText, Sparkles } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import EmptyState from '../../components/ui/EmptyState.jsx'
+import ExtractionReviewModal from '../../components/ui/ExtractionReviewModal.jsx'
+
+const EXTRACTABLE_TYPES = ['application/pdf', 'image/png', 'image/jpeg']
 
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`
@@ -14,6 +17,8 @@ export default function Documents() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [extractingId, setExtractingId] = useState(null)
+  const [reviewDocument, setReviewDocument] = useState(null)
   const fileInputRef = useRef(null)
 
   function loadDocuments() {
@@ -44,6 +49,19 @@ export default function Documents() {
     } finally {
       setUploading(false)
       e.target.value = ''
+    }
+  }
+
+  async function handleExtract(doc) {
+    setError('')
+    setExtractingId(doc.id)
+    try {
+      const { data } = await apiClient.post(`/documents/${doc.id}/extract`)
+      setReviewDocument(data)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not extract details from this document.')
+    } finally {
+      setExtractingId(null)
     }
   }
 
@@ -93,10 +111,26 @@ export default function Documents() {
               <p className="mt-1 font-mono text-xs text-parchment-faint">
                 {formatSize(doc.sizeBytes)} &middot; {new Date(doc.uploadedAt).toLocaleDateString('en-IN')}
               </p>
+              {EXTRACTABLE_TYPES.includes(doc.contentType) && (
+                <button
+                  onClick={() => handleExtract(doc)}
+                  disabled={extractingId === doc.id}
+                  className="btn-ghost mt-4 w-full !py-2 text-xs disabled:opacity-60"
+                >
+                  <Sparkles size={13} /> {extractingId === doc.id ? 'Extracting…' : 'Extract details'}
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      <ExtractionReviewModal
+        open={Boolean(reviewDocument)}
+        document={reviewDocument}
+        onClose={() => setReviewDocument(null)}
+        onSaved={() => { setReviewDocument(null); loadDocuments() }}
+      />
     </div>
   )
 }

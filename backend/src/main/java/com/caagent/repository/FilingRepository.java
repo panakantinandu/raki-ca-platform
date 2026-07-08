@@ -33,4 +33,14 @@ public interface FilingRepository extends JpaRepository<Filing, UUID> {
     List<Filing> findByOwnerIdAndDueDateBetween(@Param("ownerId") UUID ownerId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     long countByOwnerIdAndStatus(UUID ownerId, Filing.Status status);
+
+    boolean existsByOwnerIdAndClientIdAndFilingTypeAndPeriodLabel(
+            UUID ownerId, UUID clientId, Filing.FilingType filingType, String periodLabel);
+
+    List<Filing> findByOwnerIdAndStatusAndDueDateBetween(
+            UUID ownerId, Filing.Status status, LocalDate start, LocalDate end);
+
+    // Used by the public read-only status page - deliberately not owner-scoped, since the
+    // owner is implied by the client the caller already resolved via a valid share token.
+    List<Filing> findByClientIdOrderByDueDateDesc(UUID clientId);
 }
