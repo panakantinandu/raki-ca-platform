@@ -8,6 +8,7 @@ import com.caagent.model.Subscription;
 import com.caagent.model.User;
 import com.caagent.repository.ClientRepository;
 import com.caagent.repository.UserRepository;
+import com.caagent.util.CsvUtil;
 import com.caagent.util.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,16 @@ public class ClientService {
     public Client getClient(UUID ownerId, UUID clientId) {
         return clientRepository.findByIdAndOwnerId(clientId, ownerId)
                 .orElseThrow(() -> ApiException.notFound("Client not found."));
+    }
+
+    public String exportCsv(UUID ownerId) {
+        StringBuilder csv = new StringBuilder();
+        csv.append(CsvUtil.row("Name", "Entity Type", "GSTIN", "PAN", "Email", "Phone", "Status", "Created At"));
+        for (Client c : clientRepository.findByOwnerIdOrderByNameAsc(ownerId)) {
+            csv.append(CsvUtil.row(c.getName(), c.getEntityType(), c.getGstin(), c.getPan(),
+                    c.getEmail(), c.getPhone(), c.getStatus(), c.getCreatedAt()));
+        }
+        return csv.toString();
     }
 
     @Transactional

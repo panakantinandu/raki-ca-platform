@@ -10,10 +10,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +32,15 @@ public class FilingController {
                               @RequestParam(required = false) UUID clientId,
                               Pageable pageable) {
         return filingService.listFilings(principal.getUserId(), clientId, pageable);
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(@AuthenticationPrincipal UserPrincipal principal) {
+        byte[] body = filingService.exportCsv(principal.getUserId()).getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"filings.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(body);
     }
 
     @GetMapping("/calendar")

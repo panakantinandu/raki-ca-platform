@@ -19,4 +19,12 @@ public class ConsoleEmailService implements EmailService {
                         "===============================================================",
                 toEmail, resetLink);
     }
+
+    @Override
+    public void sendContactFormNotification(String name, String fromEmail, String message) {
+        log.info("=== CONTACT FORM SUBMISSION (no email provider configured - logging instead) ===\n" +
+                        "From: {} <{}>\nMessage: {}\n" +
+                        "===============================================================",
+                name, fromEmail, message);
+    }
 }

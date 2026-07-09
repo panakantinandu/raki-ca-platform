@@ -4,6 +4,7 @@ import com.caagent.dto.ExtractedDataRequest;
 import com.caagent.exception.ApiException;
 import com.caagent.model.Document;
 import com.caagent.model.DocumentExtractionCall;
+import com.caagent.model.Notification;
 import com.caagent.model.Subscription;
 import com.caagent.model.User;
 import com.caagent.repository.DocumentExtractionCallRepository;
@@ -62,6 +63,7 @@ public class DocumentExtractionService {
     private final SubscriptionService subscriptionService;
     private final AnthropicClient anthropicClient;
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
     /**
      * Explicit, user-triggered only (never automatic on upload - this costs real money per
@@ -85,13 +87,6 @@ public class DocumentExtractionService {
 
         enforceMonthlyLimit(ownerId);
 
-        User owner = userRepository.getReferenceById(ownerId);
-        extractionCallRepository.save(DocumentExtractionCall.builder()
-                .id(UUID.randomUUID())
-                .owner(owner)
-                .document(document)
-                .build());
-
         document.setExtractionStatus(Document.ExtractionStatus.PENDING);
         documentRepository.save(document);
 
@@ -99,28 +94,66 @@ public class DocumentExtractionService {
         try {
             fileBytes = Files.readAllBytes(Path.of(document.getStorageKey()));
         } catch (IOException e) {
+            // QUOTA DECISION (see below): never reached Anthropic at all - our own storage
+            // failed to read a file we already have. Not billable, so no DocumentExtractionCall
+            // is recorded and the user's monthly quota is untouched.
             document.setExtractionStatus(Document.ExtractionStatus.FAILED);
             document.setExtractedAt(Instant.now());
             documentRepository.save(document);
+            notifyExtractionFailed(ownerId, document);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "EXTRACTION_FAILED", "Could not read the stored document file.");
         }
 
+        String rawText;
         try {
-            String rawText = anthropicClient.extract(fileBytes, document.getContentType(), EXTRACTION_PROMPT);
-            Map<String, Object> extracted = parseExtractionResult(rawText);
-            document.setExtractedData(extracted);
-            document.setExtractionStatus(Document.ExtractionStatus.COMPLETED);
-            document.setExtractedAt(Instant.now());
-            return documentRepository.save(document);
+            rawText = anthropicClient.extract(fileBytes, document.getContentType(), EXTRACTION_PROMPT);
         } catch (ApiException e) {
-            // The Anthropic call itself failed (network/timeout/non-200) - record that plainly,
-            // never silently swallow it back to the frontend as if nothing happened.
+            // QUOTA DECISION: AnthropicClient only throws ApiException for a network failure,
+            // a timeout, or a non-200 HTTP response (auth failure / bad key, rate limiting,
+            // Anthropic-side 5xx). None of these represent a completed, billed API call -
+            // Anthropic only charges for a request it actually returned a response to - so no
+            // DocumentExtractionCall row is recorded here and the user's quota is untouched.
+            // A user should never lose one of their paid monthly extractions because our own
+            // key was misconfigured or Anthropic had an outage; that's on us, not them.
             document.setExtractionStatus(Document.ExtractionStatus.FAILED);
             document.setExtractedAt(Instant.now());
             documentRepository.save(document);
+            notifyExtractionFailed(ownerId, document);
             throw e;
         }
+
+        // QUOTA DECISION: we only reach here after a genuine 200 response from Anthropic - a
+        // real, billed API call - so this is the one and only place a DocumentExtractionCall is
+        // ever recorded. This holds even when the document turns out to be unreadable or
+        // irrelevant: parseExtractionResult below never throws, it just returns all-null fields
+        // with partial=true, and the document is still marked COMPLETED, not FAILED. The call
+        // still happened and Anthropic still charged for it, so it still counts against quota -
+        // that's a real cost we incurred processing the user's document, not our failure.
+        User owner = userRepository.getReferenceById(ownerId);
+        extractionCallRepository.save(DocumentExtractionCall.builder()
+                .id(UUID.randomUUID())
+                .owner(owner)
+                .document(document)
+                .build());
+
+        Map<String, Object> extracted = parseExtractionResult(rawText);
+        document.setExtractedData(extracted);
+        document.setExtractionStatus(Document.ExtractionStatus.COMPLETED);
+        document.setExtractedAt(Instant.now());
+        Document saved = documentRepository.save(document);
+
+        notificationService.create(ownerId, Notification.Type.EXTRACTION_COMPLETED,
+                "Document extraction completed for \"" + document.getFileName() + "\".",
+                document.getId(), "DOCUMENT");
+
+        return saved;
+    }
+
+    private void notifyExtractionFailed(UUID ownerId, Document document) {
+        notificationService.create(ownerId, Notification.Type.EXTRACTION_FAILED,
+                "Document extraction failed for \"" + document.getFileName() + "\". You can try again.",
+                document.getId(), "DOCUMENT");
     }
 
     @Transactional

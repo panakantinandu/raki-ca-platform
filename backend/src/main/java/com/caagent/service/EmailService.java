@@ -7,4 +7,7 @@ package com.caagent.service;
  */
 public interface EmailService {
     void sendPasswordResetEmail(String toEmail, String resetLink);
+
+    /** Notifies the team of a new contact-form submission (see ContactService). */
+    void sendContactFormNotification(String name, String fromEmail, String message);
 }

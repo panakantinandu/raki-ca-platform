@@ -9,10 +9,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @RestController
@@ -25,6 +28,18 @@ public class ClientController {
     @GetMapping
     public Page<Client> list(@AuthenticationPrincipal UserPrincipal principal, Pageable pageable) {
         return clientService.listClients(principal.getUserId(), pageable);
+    }
+
+    // Declared before "/{id}" so it isn't shadowed - Spring's path matching resolves this
+    // literal segment ahead of the path-variable pattern regardless of declaration order,
+    // but keeping it visually first avoids any doubt when skimming the class.
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(@AuthenticationPrincipal UserPrincipal principal) {
+        byte[] body = clientService.exportCsv(principal.getUserId()).getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"clients.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(body);
     }
 
     @GetMapping("/{id}")

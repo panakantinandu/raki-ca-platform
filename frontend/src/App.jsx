@@ -6,6 +6,9 @@ import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import OAuthCallback from './pages/OAuthCallback.jsx'
 import PublicStatus from './pages/PublicStatus.jsx'
+import Privacy from './pages/Privacy.jsx'
+import Terms from './pages/Terms.jsx'
+import Contact from './pages/Contact.jsx'
 import DashboardLayout from './pages/dashboard/DashboardLayout.jsx'
 import Overview from './pages/dashboard/Overview.jsx'
 import Clients from './pages/dashboard/Clients.jsx'
@@ -14,6 +17,8 @@ import Filings from './pages/dashboard/Filings.jsx'
 import Documents from './pages/dashboard/Documents.jsx'
 import Billing from './pages/dashboard/Billing.jsx'
 import Settings from './pages/dashboard/Settings.jsx'
+import Support from './pages/dashboard/Support.jsx'
+import Notifications from './pages/dashboard/Notifications.jsx'
 import Admin from './pages/dashboard/Admin.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
@@ -27,6 +32,9 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/status/:token" element={<PublicStatus />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/contact" element={<Contact />} />
 
       <Route
         path="/app"
@@ -43,6 +51,8 @@ export default function App() {
         <Route path="documents" element={<Documents />} />
         <Route path="billing" element={<Billing />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="support" element={<Support />} />
+        <Route path="notifications" element={<Notifications />} />
         <Route path="admin" element={<Admin />} />
       </Route>
     </Routes>

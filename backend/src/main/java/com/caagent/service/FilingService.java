@@ -5,11 +5,14 @@ import com.caagent.dto.FilingRequest;
 import com.caagent.exception.ApiException;
 import com.caagent.model.Client;
 import com.caagent.model.Filing;
+import com.caagent.model.Notification;
 import com.caagent.model.User;
 import com.caagent.repository.FilingRepository;
 import com.caagent.repository.UserRepository;
+import com.caagent.util.CsvUtil;
 import com.caagent.util.InputSanitizer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,11 +26,13 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FilingService {
 
     private final FilingRepository filingRepository;
     private final UserRepository userRepository;
     private final ClientService clientService;
+    private final NotificationService notificationService;
 
     public record CalendarEntry(UUID filingId, String clientName, String filingType, String periodLabel,
                                  LocalDate dueDate, String status) {}
@@ -41,6 +46,16 @@ public class FilingService {
             return filingRepository.findByOwnerIdAndClientId(ownerId, clientId, pageable);
         }
         return filingRepository.findByOwnerId(ownerId, pageable);
+    }
+
+    public String exportCsv(UUID ownerId) {
+        StringBuilder csv = new StringBuilder();
+        csv.append(CsvUtil.row("Client", "Filing Type", "Period", "Due Date", "Status", "Filed At", "Notes"));
+        for (Filing f : filingRepository.findAllByOwnerIdForExport(ownerId)) {
+            csv.append(CsvUtil.row(f.getClient().getName(), f.getFilingType(), f.getPeriodLabel(),
+                    f.getDueDate(), f.getStatus(), f.getFiledAt(), f.getNotes()));
+        }
+        return csv.toString();
     }
 
     public List<CalendarEntry> getCalendarFilings(UUID ownerId, int month, int year) {
@@ -150,5 +165,30 @@ public class FilingService {
             filing.setFiledAt(Instant.now());
         }
         return filingRepository.save(filing);
+    }
+
+    /**
+     * Daily job (see FilingOverdueScheduler): any PENDING/IN_PROGRESS filing whose due date has
+     * passed is marked OVERDUE and its owner is notified. Runs across all accounts, not scoped
+     * to one owner - there was previously no job computing OVERDUE at all; it only ever appeared
+     * in demo seed data or via a manual status change.
+     */
+    @Transactional
+    public int markOverdueAndNotify() {
+        LocalDate today = LocalDate.now();
+        List<Filing> due = filingRepository.findByStatusInAndDueDateBefore(
+                List.of(Filing.Status.PENDING, Filing.Status.IN_PROGRESS), today);
+
+        for (Filing filing : due) {
+            filing.setStatus(Filing.Status.OVERDUE);
+            filingRepository.save(filing);
+            notificationService.create(filing.getOwner().getId(), Notification.Type.FILING_OVERDUE,
+                    filing.getFilingType() + " for " + filing.getClient().getName() + " (" + filing.getPeriodLabel()
+                            + ") is now overdue - was due " + filing.getDueDate() + ".",
+                    filing.getId(), "FILING");
+        }
+
+        log.info("Overdue filing check: marked {} filing(s) overdue.", due.size());
+        return due.size();
     }
 }

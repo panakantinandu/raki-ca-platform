@@ -43,4 +43,14 @@ public interface FilingRepository extends JpaRepository<Filing, UUID> {
     // Used by the public read-only status page - deliberately not owner-scoped, since the
     // owner is implied by the client the caller already resolved via a valid share token.
     List<Filing> findByClientIdOrderByDueDateDesc(UUID clientId);
+
+    // Global (not owner-scoped) - used by the daily overdue-check job, which runs across all
+    // accounts. JOIN FETCH client/owner so the notification message can be built without N+1s.
+    @Query("SELECT f FROM Filing f JOIN FETCH f.client JOIN FETCH f.owner " +
+           "WHERE f.status IN :statuses AND f.dueDate < :today")
+    List<Filing> findByStatusInAndDueDateBefore(@Param("statuses") List<Filing.Status> statuses, @Param("today") LocalDate today);
+
+    // Unpaginated - used only for CSV export, where the whole list is needed at once.
+    @Query("SELECT f FROM Filing f JOIN FETCH f.client WHERE f.owner.id = :ownerId ORDER BY f.dueDate ASC")
+    List<Filing> findAllByOwnerIdForExport(@Param("ownerId") UUID ownerId);
 }

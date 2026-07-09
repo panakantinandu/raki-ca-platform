@@ -1,24 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-
-const FAQS = [
-  {
-    q: 'Does Raki file returns on its own?',
-    a: 'No. Raki prepares and pre-fills the return using your client\'s documents, but a CA always reviews and files. Nothing goes to a portal without your approval.'
-  },
-  {
-    q: 'What happens to my data if I cancel?',
-    a: 'You can export every client record, filing, and document at any time. If you cancel, your data stays available for 30 days before deletion.'
-  },
-  {
-    q: 'Can my team log in too?',
-    a: 'Yes - Growth and Large Firm plans include multiple seats, so associates can manage their own client sets under one firm account.'
-  },
-  {
-    q: 'Does it integrate with Tally or Zoho?',
-    a: 'A direct sync is on the roadmap. For now, you can export filings and client data as CSV to bring into your existing tools.'
-  }
-]
+import { LANDING_FAQS as FAQS } from '../../data/faqContent.js'
 
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState(0)

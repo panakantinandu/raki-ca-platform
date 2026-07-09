@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Users, FileCheck2, FolderOpen, CreditCard, Settings as SettingsIcon, LogOut, Menu, X, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, Users, FileCheck2, FolderOpen, CreditCard, Settings as SettingsIcon, LogOut, Menu, X, ShieldCheck, LifeBuoy, Bell } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import ConfirmDialog from '../../components/ui/ConfirmDialog.jsx'
+import NotificationBell from '../../components/dashboard/NotificationBell.jsx'
 
 const NAV_ITEMS = [
   { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -10,6 +11,8 @@ const NAV_ITEMS = [
   { to: '/app/filings', label: 'Filings', icon: FileCheck2 },
   { to: '/app/documents', label: 'Documents', icon: FolderOpen },
   { to: '/app/billing', label: 'Billing', icon: CreditCard },
+  { to: '/app/notifications', label: 'Notifications', icon: Bell },
+  { to: '/app/support', label: 'Support', icon: LifeBuoy },
   { to: '/app/settings', label: 'Settings', icon: SettingsIcon }
 ]
 
@@ -104,9 +107,16 @@ export default function DashboardLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-ink-border px-6 py-4 lg:hidden">
           <span className="font-display text-lg text-parchment">Raki</span>
-          <button onClick={() => setMobileOpen(true)} className="text-parchment" aria-label="Open menu">
-            <Menu size={22} />
-          </button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <button onClick={() => setMobileOpen(true)} className="text-parchment" aria-label="Open menu">
+              <Menu size={22} />
+            </button>
+          </div>
+        </header>
+
+        <header className="hidden items-center justify-end border-b border-ink-border px-6 py-3 lg:flex">
+          <NotificationBell />
         </header>
 
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">

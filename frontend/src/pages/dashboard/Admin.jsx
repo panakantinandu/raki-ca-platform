@@ -1,7 +1,131 @@
 import { useEffect, useState } from 'react'
-import { ShieldAlert } from 'lucide-react'
+import { ShieldAlert, Mail } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import StatCard from '../../components/ui/StatCard.jsx'
+import Badge from '../../components/ui/Badge.jsx'
+import { useToast } from '../../context/ToastContext.jsx'
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function ContactSubmissions() {
+  const [submissions, setSubmissions] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiClient.get('/admin/contact-submissions', { params: { size: 50 } })
+      .then(({ data }) => setSubmissions(data.content || []))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <div className="mt-8 card p-6">
+      <h2 className="mb-5 font-display text-lg font-medium text-parchment">Contact form submissions</h2>
+      {loading ? (
+        <div className="h-24 animate-pulse rounded-md bg-ink-raised/50" />
+      ) : submissions.length === 0 ? (
+        <p className="font-sans text-sm text-parchment-muted">No submissions yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {submissions.map((s) => (
+            <div key={s.id} className="rounded-md border border-ink-border p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-sans text-sm font-medium text-parchment">{s.name}</p>
+                <p className="font-mono text-[11px] text-parchment-faint">{formatDate(s.createdAt)}</p>
+              </div>
+              <p className="mt-1 flex items-center gap-1.5 font-mono text-xs text-parchment-faint">
+                <Mail size={12} /> {s.email}
+              </p>
+              <p className="mt-2 font-sans text-sm text-parchment-muted">{s.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReplyBox({ ticket, onReplied }) {
+  const [reply, setReply] = useState('')
+  const [saving, setSaving] = useState(false)
+  const { showToast } = useToast()
+
+  async function submitReply(e) {
+    e.preventDefault()
+    if (!reply.trim()) return
+    setSaving(true)
+    try {
+      await apiClient.post(`/admin/support-tickets/${ticket.id}/reply`, { reply })
+      setReply('')
+      showToast('Reply sent.')
+      onReplied()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submitReply} className="mt-3 flex gap-2">
+      <input
+        value={reply}
+        onChange={(e) => setReply(e.target.value)}
+        placeholder="Type a reply…"
+        className="input-field"
+      />
+      <button type="submit" disabled={saving} className="btn-ghost !px-4 !py-2 text-sm disabled:opacity-60">
+        {saving ? 'Sending…' : 'Reply'}
+      </button>
+    </form>
+  )
+}
+
+function SupportTickets() {
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  function load() {
+    setLoading(true)
+    apiClient.get('/admin/support-tickets', { params: { size: 50 } })
+      .then(({ data }) => setTickets(data.content || []))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(load, [])
+
+  return (
+    <div className="mt-8 card p-6">
+      <h2 className="mb-5 font-display text-lg font-medium text-parchment">Support tickets</h2>
+      {loading ? (
+        <div className="h-24 animate-pulse rounded-md bg-ink-raised/50" />
+      ) : tickets.length === 0 ? (
+        <p className="font-sans text-sm text-parchment-muted">No tickets yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {tickets.map((t) => (
+            <div key={t.id} className="rounded-md border border-ink-border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-sans text-sm font-medium text-parchment">{t.subject}</p>
+                <Badge status={t.status} />
+              </div>
+              <p className="mt-1.5 font-sans text-sm text-parchment-muted">{t.message}</p>
+              <p className="mt-2 font-mono text-[11px] text-parchment-faint">{formatDate(t.createdAt)}</p>
+
+              {t.adminReply ? (
+                <div className="mt-3 rounded-md border border-brass/20 bg-brass/5 px-3 py-2.5">
+                  <p className="font-mono text-[11px] uppercase tracking-wider text-brass">Your reply</p>
+                  <p className="mt-1 font-sans text-sm text-parchment">{t.adminReply}</p>
+                </div>
+              ) : (
+                <ReplyBox ticket={t} onReplied={load} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Admin() {
   const [stats, setStats] = useState(null)
@@ -103,7 +227,7 @@ export default function Admin() {
                     <td className="py-3 text-parchment">{s.fullName}</td>
                     <td className="py-3 text-parchment-muted">{s.email}</td>
                     <td className="py-3 font-mono text-xs text-parchment-faint">
-                      {new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {formatDate(s.createdAt)}
                     </td>
                   </tr>
                 ))}
@@ -112,6 +236,9 @@ export default function Admin() {
           </div>
         )}
       </div>
+
+      <SupportTickets />
+      <ContactSubmissions />
     </div>
   )
 }

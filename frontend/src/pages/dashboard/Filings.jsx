@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Plus, FileCheck2, Check, Table2, CalendarDays, CheckCheck } from 'lucide-react'
+import { Plus, FileCheck2, Check, Table2, CalendarDays, CheckCheck, Download } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import Modal from '../../components/ui/Modal.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
 import Badge from '../../components/ui/Badge.jsx'
 import FilingsCalendar from '../../components/filings/FilingsCalendar.jsx'
+import { useToast } from '../../context/ToastContext.jsx'
+import { downloadFile } from '../../utils/downloadFile.js'
 
 const FILING_TYPES = ['GSTR1', 'GSTR3B', 'ITR', 'TDS', 'AUDIT']
 
@@ -17,6 +19,7 @@ function formatDueDate(isoDate) {
 }
 
 export default function Filings() {
+  const { showToast } = useToast()
   const [view, setView] = useState('calendar')
   const [filings, setFilings] = useState([])
   const [clients, setClients] = useState([])
@@ -27,6 +30,19 @@ export default function Filings() {
   const [saving, setSaving] = useState(false)
   const [selectedIds, setSelectedIds] = useState([])
   const [bulkMarking, setBulkMarking] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  async function handleExport() {
+    setExporting(true)
+    try {
+      await downloadFile('/filings/export', 'filings.csv')
+      showToast('Filings exported.')
+    } catch {
+      showToast('Could not export filings.', { type: 'error' })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   function loadFilings() {
     setLoading(true)
@@ -54,6 +70,7 @@ export default function Filings() {
       await apiClient.post('/filings', form)
       setModalOpen(false)
       loadFilings()
+      showToast('Filing created.')
     } catch (err) {
       setFormError(err.response?.data?.message || 'Could not create this filing.')
     } finally {
@@ -61,9 +78,21 @@ export default function Filings() {
     }
   }
 
+  // Optimistic: the table update is applied immediately (single, well-defined mutation, no
+  // per-item ambiguity), then rolled back if the request fails. Bulk mark-as-filed below is
+  // NOT optimistic - it can partially fail per filing, and showing a false "all done" state
+  // before the server confirms which ones actually succeeded isn't worth the snappier UI.
   async function markFiled(id) {
-    await apiClient.patch(`/filings/${id}/mark-filed`)
-    loadFilings()
+    const previous = filings
+    setFilings((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'FILED', filedAt: new Date().toISOString() } : f)))
+    setSelectedIds((prev) => prev.filter((x) => x !== id))
+    try {
+      await apiClient.patch(`/filings/${id}/mark-filed`)
+      showToast('Filing marked as filed.')
+    } catch (err) {
+      setFilings(previous)
+      showToast('Could not mark this filing as filed.', { type: 'error' })
+    }
   }
 
   function toggleSelected(id) {
@@ -79,9 +108,11 @@ export default function Filings() {
   async function bulkMarkFiled() {
     setBulkMarking(true)
     try {
-      await apiClient.patch('/filings/bulk-mark-filed', { filingIds: selectedIds })
+      const { data } = await apiClient.patch('/filings/bulk-mark-filed', { filingIds: selectedIds })
+      const succeeded = Array.isArray(data) ? data.filter((r) => r.success).length : selectedIds.length
       setSelectedIds([])
       loadFilings()
+      showToast(`Bulk action completed: ${succeeded} of ${selectedIds.length} filing(s) marked as filed.`)
     } finally {
       setBulkMarking(false)
     }
@@ -118,6 +149,9 @@ export default function Filings() {
               <CheckCheck size={16} /> {bulkMarking ? 'Marking…' : `Bulk mark as filed (${selectedIds.length})`}
             </button>
           )}
+          <button onClick={handleExport} disabled={exporting} className="btn-ghost !px-4 !py-2.5 text-sm disabled:opacity-60">
+            <Download size={16} /> {exporting ? 'Exporting…' : 'Export CSV'}
+          </button>
           <button onClick={openCreate} disabled={clients.length === 0} className="btn-brass !py-2.5 disabled:opacity-50">
             <Plus size={16} /> New filing
           </button>

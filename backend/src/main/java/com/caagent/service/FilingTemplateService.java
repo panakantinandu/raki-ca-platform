@@ -5,6 +5,7 @@ import com.caagent.exception.ApiException;
 import com.caagent.model.Client;
 import com.caagent.model.Filing;
 import com.caagent.model.FilingTemplate;
+import com.caagent.model.Notification;
 import com.caagent.model.User;
 import com.caagent.repository.FilingRepository;
 import com.caagent.repository.FilingTemplateRepository;
@@ -33,6 +34,7 @@ public class FilingTemplateService {
     private final FilingRepository filingRepository;
     private final UserRepository userRepository;
     private final ClientService clientService;
+    private final NotificationService notificationService;
 
     public List<FilingTemplate> listForClient(UUID ownerId, UUID clientId) {
         // Confirms the client belongs to this owner (throws 404 otherwise) before listing.
@@ -100,6 +102,11 @@ public class FilingTemplateService {
                     .build();
             filingRepository.save(filing);
             created++;
+
+            notificationService.create(ownerId, Notification.Type.RECURRING_FILING_CREATED,
+                    "A new " + filing.getFilingType() + " filing for " + template.getClient().getName()
+                            + " (" + periodLabel + ") was created from your recurring template, due " + dueDate + ".",
+                    filing.getId(), "FILING");
         }
 
         log.info("Recurring filing template job: created {} filing(s) for period.", created);

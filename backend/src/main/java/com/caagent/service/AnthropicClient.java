@@ -65,10 +65,27 @@ public class AnthropicClient {
      */
     public String extract(byte[] fileBytes, String mediaType, String prompt) {
         String requestBody = buildRequestBody(fileBytes, mediaType, prompt);
+        HttpResponse<String> response = send(requestBody, Duration.ofSeconds(45), "EXTRACTION");
+        return extractTextFromResponse(response.body());
+    }
 
+    /**
+     * Text-only chat call (system prompt + one user message, no document) - used by the Support
+     * tab's Layer B AI-assisted answers. Reuses the same client/error-handling as extract() since
+     * it's the same Anthropic account and the same "never swallow a failure silently" contract;
+     * callers (SupportChatService) are expected to catch ApiException and fall back gracefully
+     * rather than surfacing a raw error to the user.
+     */
+    public String chatText(String systemPrompt, String userMessage) {
+        String requestBody = buildChatRequestBody(systemPrompt, userMessage);
+        HttpResponse<String> response = send(requestBody, Duration.ofSeconds(30), "CHAT");
+        return extractTextFromResponse(response.body());
+    }
+
+    private HttpResponse<String> send(String requestBody, Duration timeout, String errorCodePrefix) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
-                .timeout(Duration.ofSeconds(45))
+                .timeout(timeout)
                 .header("x-api-key", apiKey)
                 .header("anthropic-version", ANTHROPIC_VERSION)
                 .header("content-type", "application/json")
@@ -80,21 +97,21 @@ public class AnthropicClient {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
             log.error("Anthropic API call failed (network error)", e);
-            throw new ApiException(HttpStatus.BAD_GATEWAY, "EXTRACTION_UNAVAILABLE",
-                    "Could not reach the document extraction service. Please try again shortly.");
+            throw new ApiException(HttpStatus.BAD_GATEWAY, errorCodePrefix + "_UNAVAILABLE",
+                    "Could not reach the AI service. Please try again shortly.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new ApiException(HttpStatus.GATEWAY_TIMEOUT, "EXTRACTION_TIMEOUT",
-                    "Document extraction timed out. Please try again.");
+            throw new ApiException(HttpStatus.GATEWAY_TIMEOUT, errorCodePrefix + "_TIMEOUT",
+                    "The AI service timed out. Please try again.");
         }
 
         if (response.statusCode() != 200) {
             log.error("Anthropic API returned HTTP {}: {}", response.statusCode(), response.body());
-            throw new ApiException(HttpStatus.BAD_GATEWAY, "EXTRACTION_FAILED",
-                    "The document extraction service returned an error (HTTP " + response.statusCode() + ").");
+            throw new ApiException(HttpStatus.BAD_GATEWAY, errorCodePrefix + "_FAILED",
+                    "The AI service returned an error (HTTP " + response.statusCode() + ").");
         }
 
-        return extractTextFromResponse(response.body());
+        return response;
     }
 
     private String buildRequestBody(byte[] fileBytes, String mediaType, String prompt) {
@@ -125,6 +142,24 @@ public class AnthropicClient {
             // Only possible if ObjectNode serialization itself is broken - a programming error,
             // not a runtime condition callers should have to handle.
             throw new IllegalStateException("Failed to build Anthropic request body", e);
+        }
+    }
+
+    private String buildChatRequestBody(String systemPrompt, String userMessage) {
+        ObjectNode body = objectMapper.createObjectNode();
+        body.put("model", model);
+        body.put("max_tokens", 512);
+        body.put("system", systemPrompt);
+
+        ArrayNode messages = body.putArray("messages");
+        ObjectNode userMsg = messages.addObject();
+        userMsg.put("role", "user");
+        userMsg.put("content", userMessage);
+
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to build Anthropic chat request body", e);
         }
     }
 

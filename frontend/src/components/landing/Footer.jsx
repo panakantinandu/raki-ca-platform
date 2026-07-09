@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function Footer() {
   return (
     <footer className="border-t border-ink-border py-12">
@@ -15,9 +17,9 @@ export default function Footer() {
         </p>
 
         <div className="flex gap-6 font-sans text-sm text-parchment-muted">
-          <a href="#" className="hover:text-parchment">Privacy</a>
-          <a href="#" className="hover:text-parchment">Terms</a>
-          <a href="#" className="hover:text-parchment">Contact</a>
+          <Link to="/privacy" className="hover:text-parchment">Privacy</Link>
+          <Link to="/terms" className="hover:text-parchment">Terms</Link>
+          <Link to="/contact" className="hover:text-parchment">Contact</Link>
         </div>
       </div>
     </footer>
