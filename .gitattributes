@@ -1,0 +1,4 @@
+# Shell scripts run inside Linux containers - a CRLF line ending breaks the shebang line
+# entirely (#!/bin/sh\r is not a valid interpreter path). Force LF regardless of the
+# committing machine's core.autocrlf setting.
+*.sh text eol=lf
