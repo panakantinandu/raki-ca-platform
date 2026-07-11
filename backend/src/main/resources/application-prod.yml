@@ -4,8 +4,12 @@ spring:
 
 server:
   tomcat:
-    max-threads: 200
-    accept-count: 100
+    # Sized for a small-memory container (e.g. Railway's lower tiers), not a large fleet -
+    # each pooled thread reserves its own stack, and 200 threads was needlessly generous for
+    # this app's actual traffic. 50 concurrent in-flight requests is still well above what a
+    # handful of CA firms generate; raise this once real usage actually approaches it.
+    max-threads: 50
+    accept-count: 50
 
 logging:
   level:
