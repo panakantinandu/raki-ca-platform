@@ -133,6 +133,16 @@
             <version>3.9.0</version>
         </dependency>
 
+        <!-- Loads backend/.env into the Spring Environment for `mvnw spring-boot:run` - without
+             this, .env is just documentation and every value in it has to be exported into the
+             shell by hand before starting the app. Not used in prod (Railway/docker-compose
+             inject real env vars directly), and .env is still git-ignored either way. -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
         <!-- Utils -->
         <dependency>
             <groupId>org.projectlombok</groupId>
