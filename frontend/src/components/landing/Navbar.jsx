@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -18,6 +20,21 @@ export default function Navbar() {
     { label: 'Pricing', href: '#pricing' },
     { label: 'FAQ', href: '#faq' }
   ]
+
+  // These links only make sense on the landing page. From elsewhere (Terms/Privacy/Contact,
+  // which share this Navbar) href="#product" would just tack a hash onto the current URL with
+  // nothing to scroll to. If already on "/", scroll directly; otherwise navigate to "/" first
+  // and let Landing's own hash effect scroll once the sections exist.
+  function handleNavClick(e, href) {
+    const id = href.slice(1)
+    if (location.pathname === '/') {
+      e.preventDefault()
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      e.preventDefault()
+      navigate(`/${href}`)
+    }
+  }
 
   return (
     <header
@@ -36,7 +53,12 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-8 md:flex">
           {links.map((l) => (
-            <a key={l.label} href={l.href} className="font-sans text-sm text-parchment-muted transition-colors hover:text-parchment">
+            <a
+              key={l.label}
+              href={`/${l.href}`}
+              onClick={(e) => handleNavClick(e, l.href)}
+              className="font-sans text-sm text-parchment-muted transition-colors hover:text-parchment"
+            >
               {l.label}
             </a>
           ))}
@@ -60,7 +82,15 @@ export default function Navbar() {
         <div className="border-t border-ink-border bg-ink px-6 py-4 md:hidden">
           <div className="flex flex-col gap-4">
             {links.map((l) => (
-              <a key={l.label} href={l.href} className="text-sm text-parchment-muted" onClick={() => setOpen(false)}>
+              <a
+                key={l.label}
+                href={`/${l.href}`}
+                className="text-sm text-parchment-muted"
+                onClick={(e) => {
+                  handleNavClick(e, l.href)
+                  setOpen(false)
+                }}
+              >
                 {l.label}
               </a>
             ))}
