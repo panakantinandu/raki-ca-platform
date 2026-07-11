@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📊 Raki — AI Practice Assistant for CA Firms
+# 📊 Raki - AI Practice Assistant for CA Firms
 
 ### A production-shaped SaaS platform for chartered accountants & tax consultants in India
 
