@@ -13,7 +13,8 @@
 [![Redis](https://img.shields.io/badge/Redis-Bucket4j-DC382D?style=flat-square&logo=redis&logoColor=white)](#)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](#-license)
-[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](#-contributing)
+[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
+[![Security Policy](https://img.shields.io/badge/Security-Policy-blue?style=flat-square)](SECURITY.md)
 
 </div>
 
@@ -332,12 +333,8 @@ is running.
   exception handler that logs details server-side and returns only safe,
   generic messages to the client.
 
-### 🧯 Reporting a vulnerability
-
-If you find a security issue, please **do not** open a public GitHub issue.
-Instead email the maintainer directly (see [Contact](#-contributing)) with
-details and reproduction steps. Give a reasonable window to address the
-issue before any public disclosure.
+> 🧯 **Found a vulnerability?** Please don't open a public issue — see
+> [SECURITY.md](SECURITY.md) for how to report it privately.
 
 ### What to add before real production use
 
@@ -457,22 +454,16 @@ pipeline are especially welcome (see below).
 
 ## 🤝 Contributing
 
-Contributions, bug reports, and suggestions are welcome.
+Contributions, bug reports, and suggestions are welcome. See
+**[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide — dev setup,
+coding conventions, the PR checklist, and how issues/PRs are reviewed.
 
-1. **Fork** the repo and create a branch off `main`: `git checkout -b feature/short-description`
-2. **Keep changes focused** — one logical change per PR is much easier to review than a bundle of unrelated fixes.
-3. **Follow existing conventions**:
-   - Backend: standard Spring Boot layering (`controller` → `service` → `repository`), DTOs validated with Jakarta Bean Validation, no raw SQL string concatenation.
-   - Frontend: functional components, Tailwind utility classes, Axios via the shared `api` client (don't call `fetch` directly).
-4. **Run the checks locally** before opening a PR:
-   ```bash
-   cd backend && ./mvnw test
-   cd frontend && npm run lint && npm run build
-   ```
-5. **Never commit secrets** — `.env` is git-ignored; use `.env.example` to document new variables instead.
-6. **Open a PR** against `main` with a clear description of the *why*, not just the *what*. Link any related issue.
+Quick version: fork → branch off `main` → keep the PR focused → run
+`./mvnw test` and `npm run lint && npm run build` → open a PR explaining
+*why*, not just *what*.
 
-For anything security-sensitive, see [Reporting a vulnerability](#-reporting-a-vulnerability) above instead of opening a public PR/issue.
+For security-sensitive reports, use **[SECURITY.md](SECURITY.md)** instead
+of a public issue.
 
 ---
 
