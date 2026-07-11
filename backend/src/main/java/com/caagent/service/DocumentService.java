@@ -98,6 +98,21 @@ public class DocumentService {
 
             Path dir = Path.of(localStorageDir);
             Files.createDirectories(dir);
+
+            // Some platforms (Railway among them) mount a fresh, root-owned tmpfs over /tmp at
+            // container start regardless of what the image's Dockerfile chowns at build time -
+            // createDirectories() above succeeds either way (it's a no-op if the dir already
+            // exists) but the subsequent write can still fail with AccessDeniedException. Fail
+            // here instead, with a message that actually says what's wrong - LOCAL_STORAGE_DIR
+            // should point at a real persistent, writable mount (e.g. a Railway Volume), not the
+            // default /tmp path, in any environment where the container filesystem isn't fully
+            // under our control.
+            if (!Files.isWritable(dir)) {
+                log.error("Storage directory {} is not writable by this process. Set LOCAL_STORAGE_DIR " +
+                        "to a writable, persistent mount (e.g. a Railway Volume) instead of relying on /tmp.", dir);
+                throw new IOException("Storage directory is not writable: " + dir);
+            }
+
             Path target = dir.resolve(storedName).normalize();
 
             // Defense against path traversal: resolved path must still live inside the storage dir.

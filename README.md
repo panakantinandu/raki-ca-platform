@@ -348,7 +348,14 @@ is running.
 - Razorpay webhook signature verification wired into a `PaymentController`
   (the `Subscription`/`PaymentEvent` tables are ready for it).
 - Object storage (S3/GCS) instead of local disk for documents — swap the one
-  method in `DocumentService.upload()`.
+  method in `DocumentService.upload()`. **This isn't optional on most PaaS
+  platforms**: local disk (the `/tmp` default) is typically wiped on every
+  redeploy and isn't reliably writable to begin with (Railway mounts a
+  fresh, root-owned `tmpfs` over `/tmp` regardless of what the Docker image
+  chowns at build time — confirmed the hard way via a production
+  `AccessDeniedException`). Until object storage is wired up, at minimum
+  point `LOCAL_STORAGE_DIR` at a real persistent volume (e.g. a Railway
+  Volume) rather than the default — see `backend/.env.example`.
 
 ---
 
