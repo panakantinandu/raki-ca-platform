@@ -40,6 +40,12 @@ public class DocumentController {
         return ResponseEntity.ok(documentService.upload(principal.getUserId(), clientId, file));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
+        documentService.deleteDocument(principal.getUserId(), id);
+        return ResponseEntity.noContent().build();
+    }
+
     // Explicit, user-triggered action only - this calls a paid external API, so it must never
     // run automatically (e.g. on upload). Has its own tighter rate limit (see RateLimitFilter)
     // and a plan-based monthly cap (see DocumentExtractionService.enforceMonthlyLimit).

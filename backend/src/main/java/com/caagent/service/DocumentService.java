@@ -8,6 +8,7 @@ import com.caagent.repository.ClientRepository;
 import com.caagent.repository.DocumentRepository;
 import com.caagent.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DocumentService {
 
     // Allow-list, not a deny-list: only these content types are accepted.
@@ -45,6 +47,26 @@ public class DocumentService {
             return documentRepository.findByOwnerIdAndClientId(ownerId, clientId, pageable);
         }
         return documentRepository.findByOwnerId(ownerId, pageable);
+    }
+
+    /**
+     * Deletes the DB row first, then best-effort removes the file from disk. Order matters:
+     * if the disk delete failed first and the DB delete then also failed, we'd be left with an
+     * orphaned file with no record - annoying but harmless. The reverse (DB row gone, file
+     * still on disk) just wastes a little disk space, which is the safer failure mode.
+     */
+    @Transactional
+    public void deleteDocument(UUID ownerId, UUID documentId) {
+        Document document = documentRepository.findByIdAndOwnerId(documentId, ownerId)
+                .orElseThrow(() -> ApiException.notFound("Document not found."));
+
+        documentRepository.delete(document);
+
+        try {
+            Files.deleteIfExists(Path.of(document.getStorageKey()));
+        } catch (IOException e) {
+            log.warn("Deleted document {} from DB but failed to remove file at {}", documentId, document.getStorageKey(), e);
+        }
     }
 
     @Transactional

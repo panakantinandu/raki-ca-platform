@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Upload, FolderOpen, FileText, Sparkles } from 'lucide-react'
+import { Upload, FolderOpen, FileText, Sparkles, Trash2 } from 'lucide-react'
 import apiClient from '../../api/axiosClient.js'
 import EmptyState from '../../components/ui/EmptyState.jsx'
 import ExtractionReviewModal from '../../components/ui/ExtractionReviewModal.jsx'
+import ConfirmDialog from '../../components/ui/ConfirmDialog.jsx'
 
 const EXTRACTABLE_TYPES = ['application/pdf', 'image/png', 'image/jpeg']
 
@@ -19,6 +20,8 @@ export default function Documents() {
   const [error, setError] = useState('')
   const [extractingId, setExtractingId] = useState(null)
   const [reviewDocument, setReviewDocument] = useState(null)
+  const [deletingDoc, setDeletingDoc] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef(null)
 
   function loadDocuments() {
@@ -40,8 +43,12 @@ export default function Documents() {
     formData.append('file', file)
 
     try {
+      // apiClient defaults to Content-Type: application/json - override to undefined
+      // (not 'multipart/form-data') so axios/the browser generates the correct header
+      // itself, including the required boundary. A hardcoded 'multipart/form-data'
+      // with no boundary produces an unparseable request the server can't read at all.
       await apiClient.post('/documents', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': undefined }
       })
       loadDocuments()
     } catch (err) {
@@ -62,6 +69,21 @@ export default function Documents() {
       setError(err.response?.data?.message || 'Could not extract details from this document.')
     } finally {
       setExtractingId(null)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingDoc) return
+    setError('')
+    setDeleting(true)
+    try {
+      await apiClient.delete(`/documents/${deletingDoc.id}`)
+      setDeletingDoc(null)
+      loadDocuments()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not delete this document.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -102,8 +124,17 @@ export default function Documents() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {documents.map((doc) => (
             <div key={doc.id} className="card p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brass/10">
-                <FileText size={18} className="text-brass" />
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brass/10">
+                  <FileText size={18} className="text-brass" />
+                </div>
+                <button
+                  onClick={() => setDeletingDoc(doc)}
+                  className="rounded-md p-2 text-parchment-faint hover:bg-ink-raised hover:text-ledger-red"
+                  aria-label="Delete"
+                >
+                  <Trash2 size={15} />
+                </button>
               </div>
               <p className="mt-4 truncate font-sans text-sm font-medium text-parchment" title={doc.fileName}>
                 {doc.fileName}
@@ -130,6 +161,16 @@ export default function Documents() {
         document={reviewDocument}
         onClose={() => setReviewDocument(null)}
         onSaved={() => { setReviewDocument(null); loadDocuments() }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deletingDoc)}
+        title="Delete document?"
+        body={deletingDoc ? `"${deletingDoc.fileName}" and any extracted data will be permanently removed. This can't be undone.` : ''}
+        confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setDeletingDoc(null)}
       />
     </div>
   )
