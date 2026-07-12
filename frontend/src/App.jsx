@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
@@ -9,18 +10,23 @@ import PublicStatus from './pages/PublicStatus.jsx'
 import Privacy from './pages/Privacy.jsx'
 import Terms from './pages/Terms.jsx'
 import Contact from './pages/Contact.jsx'
-import DashboardLayout from './pages/dashboard/DashboardLayout.jsx'
-import Overview from './pages/dashboard/Overview.jsx'
-import Clients from './pages/dashboard/Clients.jsx'
-import ClientDetail from './pages/dashboard/ClientDetail.jsx'
-import Filings from './pages/dashboard/Filings.jsx'
-import Documents from './pages/dashboard/Documents.jsx'
-import Billing from './pages/dashboard/Billing.jsx'
-import Settings from './pages/dashboard/Settings.jsx'
-import Support from './pages/dashboard/Support.jsx'
-import Notifications from './pages/dashboard/Notifications.jsx'
-import Admin from './pages/dashboard/Admin.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import DashboardLoading from './components/dashboard/DashboardLoading.jsx'
+
+// Everything under /app is only ever reached after login, so there's no reason for a first-time
+// visitor to the public landing page to download it up front - lazy-loading these keeps the
+// dashboard's code (and its dependencies, e.g. recharts) out of the initial bundle entirely.
+const DashboardLayout = lazy(() => import('./pages/dashboard/DashboardLayout.jsx'))
+const Overview = lazy(() => import('./pages/dashboard/Overview.jsx'))
+const Clients = lazy(() => import('./pages/dashboard/Clients.jsx'))
+const ClientDetail = lazy(() => import('./pages/dashboard/ClientDetail.jsx'))
+const Filings = lazy(() => import('./pages/dashboard/Filings.jsx'))
+const Documents = lazy(() => import('./pages/dashboard/Documents.jsx'))
+const Billing = lazy(() => import('./pages/dashboard/Billing.jsx'))
+const Settings = lazy(() => import('./pages/dashboard/Settings.jsx'))
+const Support = lazy(() => import('./pages/dashboard/Support.jsx'))
+const Notifications = lazy(() => import('./pages/dashboard/Notifications.jsx'))
+const Admin = lazy(() => import('./pages/dashboard/Admin.jsx'))
 
 export default function App() {
   return (
@@ -40,7 +46,9 @@ export default function App() {
         path="/app"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Suspense fallback={<DashboardLoading />}>
+              <DashboardLayout />
+            </Suspense>
           </ProtectedRoute>
         }
       >
