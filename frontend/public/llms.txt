@@ -1,0 +1,19 @@
+# Raki
+
+> Practice-management software for chartered accountant (CA) firms in India: client
+> management, GST/TDS/ITR filing and deadline tracking, document uploads with AI-assisted
+> data extraction, and a subscription billing plan structure.
+
+Raki is a preparation and record-keeping tool for a CA firm's own practice - it does not
+file anything with a government portal on a firm's behalf. Any AI-extracted document data
+must be reviewed and confirmed by the firm before it is used elsewhere in the app.
+
+## Key pages
+
+- [Home](/): overview of the product, features, and pricing
+- [Pricing](/#pricing): current subscription plans and founding-member pricing
+- [How it works](/#how-it-works): the client -> filing -> document workflow
+- [Sign up](/signup): start a free trial
+- [Terms of Service](/terms)
+- [Privacy Policy](/privacy)
+- [Contact](/contact)
