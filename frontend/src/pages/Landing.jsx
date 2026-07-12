@@ -27,12 +27,14 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-ink font-sans text-parchment">
       <Navbar />
-      <Hero />
-      <Features />
-      <HowItWorks />
-      <Pricing />
-      <FAQ />
-      <CTASection />
+      <main>
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <Pricing />
+        <FAQ />
+        <CTASection />
+      </main>
       <Footer />
     </div>
   )

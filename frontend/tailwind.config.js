@@ -13,7 +13,10 @@ export default {
         parchment: {
           DEFAULT: '#EDEAE3',
           muted: '#9BA1AC',
-          faint: '#6B7280'
+          // WCAG AA requires >=4.5:1 for normal text; the previous #6B7280 measured 4.00:1
+          // against the ink background (#0B0E11) and failed. #7A8290 measures ~5.0:1 -
+          // recompute against ink if this or the background ever changes.
+          faint: '#7A8290'
         },
         brass: {
           DEFAULT: '#C9A227',
